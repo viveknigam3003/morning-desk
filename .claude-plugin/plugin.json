@@ -1,0 +1,11 @@
+{
+  "name": "morning-desk",
+  "displayName": "Morning Desk",
+  "version": "0.1.0",
+  "description": "A private morning triage desk for Claude Code: one page with what needs you across Slack, GitHub, your ticket tracker and your Claude sessions, kept current by Claude, plus a daily update drafted in your style. Never sends anything.",
+  "author": { "name": "Vivek Nigam" },
+  "homepage": "https://github.com/viveknigam3003/morning-desk",
+  "repository": "https://github.com/viveknigam3003/morning-desk",
+  "license": "MIT",
+  "keywords": ["dashboard", "standup", "daily-update", "slack", "github", "triage", "artifact"]
+}

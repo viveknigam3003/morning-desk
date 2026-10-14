@@ -1,0 +1,19 @@
+# ~/.config/morning-desk/config.yaml (written by /desk-setup; edit freely)
+desk_url: https://claude.ai/artifact/<your-desk-id>
+owner_name: Alex
+slack_workspace: your-workspace          # your-workspace.slack.com
+slack_user_id: U00000000
+team_channels:                            # channels whose threads you care about
+  - { id: C00000000, name: "#team" }
+update_channel: { id: C00000000, name: "#team" }
+update_cadence: weekly-thread             # weekly-thread (Monday top-level, replies Tue-Fri) | daily-top-level | none
+update_header: "Daily Update for {date}:" # {date} is DD-MM-YYYY
+timezone: Europe/London
+github_orgs: [your-org]
+tracker:                                  # optional; delete the block if you don't use one
+  type: linear                            # jira | clickup | devrev | linear | github-issues | other
+  connector: linear                       # MCP server name the tracker tools come from
+  link_pattern: https://linear.app/your-team/issue/{key}
+  my_open_query: "issues assigned to me that are not done"
+writes:
+  close_merged_tickets: false             # true = move a ticket to done once all its linked PRs merged

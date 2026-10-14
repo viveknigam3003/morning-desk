@@ -1,0 +1,14 @@
+{
+  "name": "morning-desk",
+  "owner": {
+    "name": "Vivek Nigam"
+  },
+  "description": "A private morning desk for Claude Code: what needs you across Slack, GitHub, your tracker and your sessions, plus a daily-update drafter.",
+  "plugins": [
+    {
+      "name": "morning-desk",
+      "source": "./",
+      "description": "Private morning triage desk and daily-update drafter for Claude Code."
+    }
+  ]
+}

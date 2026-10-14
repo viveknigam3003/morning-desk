@@ -1,0 +1,667 @@
+<title>Morning Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a triage desk. Brief on top, then strips grouped by what each item needs from you; age and source in mono. */
+:root {
+  --bg: #f3f4f1;
+  --panel: #ffffff;
+  --ink: #1d2327;
+  --muted: #5d676e;
+  --line: #dde1dc;
+  --accent: #2346a8;
+  --accent-soft: #e6ebf8;
+  --k-reply: #c2410c;
+  --k-commit: #a16207;
+  --k-waiting: #2563a8;
+  --k-quiet: #6b6f76;
+  --k-hygiene: #4d7c0f;
+  --danger: #b42318;
+  --ok: #2f7a3e;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14171a; --panel: #1c2024; --ink: #e7eaec; --muted: #9aa3aa; --line: #2c3237;
+    --accent: #8ea8f0; --accent-soft: #232c45;
+    --k-reply: #f08a5d; --k-commit: #e0b341; --k-waiting: #79a7e0; --k-quiet: #9aa0a8; --k-hygiene: #9bc95a;
+    --danger: #f2766b; --ok: #6cc584;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14171a; --panel: #1c2024; --ink: #e7eaec; --muted: #9aa3aa; --line: #2c3237;
+  --accent: #8ea8f0; --accent-soft: #232c45;
+  --k-reply: #f08a5d; --k-commit: #e0b341; --k-waiting: #79a7e0; --k-quiet: #9aa0a8; --k-hygiene: #9bc95a;
+  --danger: #f2766b; --ok: #6cc584;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 2.1rem; line-height: 1.05; margin: 0; letter-spacing: -0.01em; }
+.date { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+.tally { display: flex; flex-wrap: wrap; gap: 8px; }
+.tally button { display: flex; align-items: baseline; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.tally button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tally b { font-family: var(--font-mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.tally span { font-size: 0.8rem; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; align-self: center; }
+
+.brief { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 8px; }
+.brief h2 { font-family: var(--font-display); font-size: 1.05rem; margin: 0; font-weight: 600; text-wrap: balance; }
+.brief .meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.brief ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.brief p { margin: 0; color: var(--muted); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar input[type="search"] { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 6px 11px; cursor: pointer; font-size: 0.86rem; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--ink); }
+label.check { display: flex; gap: 6px; align-items: center; font-size: 0.86rem; color: var(--muted); }
+
+section.group { display: grid; gap: 8px; }
+.group-head { display: flex; align-items: center; gap: 10px; }
+.group-head h3 { margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.group-head .count { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.group-head .hint { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+
+.strip { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 11px 14px 11px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; }
+.strip::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-radius: 6px 0 0 6px; background: var(--kc); }
+.strip.done { opacity: 0.62; }
+.strip.done .title { text-decoration: line-through; }
+.title { font-weight: 600; min-width: 0; }
+.title .hi { font-family: var(--font-mono); font-size: 0.72rem; color: var(--danger); border: 1px solid var(--danger); border-radius: 3px; padding: 0 4px; margin-right: 6px; vertical-align: 1px; }
+.detail { grid-column: 1 / -1; color: var(--muted); font-size: 0.9rem; min-width: 0; overflow-wrap: anywhere; }
+.facts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); align-items: center; }
+.facts .age.old { color: var(--danger); }
+.facts .due.soon { color: var(--k-commit); }
+.facts .due.late { color: var(--danger); font-weight: 500; }
+select.btn { padding: 4px 8px; }
+.sess summary { display: flex; gap: 10px; align-items: baseline; }
+.sess-list { display: grid; gap: 8px; margin-top: 10px; }
+.sess-row { border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; display: grid; gap: 4px; }
+.sess-row .top { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.sess-row .top b { font-weight: 600; }
+.sess-row .state { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+.sess-chip { display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 0.74rem; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--ink); background: var(--bg); cursor: pointer; }
+.sess-chip:hover { border-color: var(--accent); }
+.facts .init { color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 0 6px; }
+.facts a { font-family: var(--font-body); font-size: 0.84rem; font-weight: 500; }
+.actions { display: flex; gap: 6px; align-items: start; flex-wrap: wrap; justify-content: end; }
+.note { grid-column: 1 / -1; font-size: 0.88rem; background: var(--accent-soft); border-radius: 4px; padding: 6px 9px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-edit { grid-column: 1 / -1; display: grid; gap: 6px; }
+.note-edit textarea { width: 100%; min-height: 64px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); resize: vertical; }
+.note-edit .row { display: flex; gap: 6px; justify-content: end; }
+.snooze-menu { display: flex; gap: 4px; }
+
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 22px; text-align: center; color: var(--muted); display: grid; gap: 6px; }
+.empty strong { color: var(--ink); font-weight: 600; }
+
+details.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+details.panel summary { cursor: pointer; font-weight: 600; }
+form.add { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 12px; }
+form.add .wide { grid-column: 1 / -1; }
+form.add label { display: grid; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+form.add input, form.add select, form.add textarea, .asks textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); width: 100%; }
+.asks { display: grid; gap: 8px; margin-top: 10px; }
+.asks textarea { min-height: 90px; resize: vertical; }
+.asks .row { display: flex; gap: 10px; align-items: center; justify-content: end; font-size: 0.8rem; color: var(--muted); }
+.status { font-size: 0.85rem; color: var(--muted); min-height: 1.2em; }
+.status.err { color: var(--danger); }
+.du { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 12px; }
+.du-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.du-head h2 { font-family: var(--font-display); font-size: 1.05rem; margin: 0; font-weight: 600; }
+.du-head .spacer { flex: 1; }
+.meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.du-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.du-row .spacer { flex: 1; }
+.du-row .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.du pre { margin: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.du .hint { margin: 0; font-size: 0.8rem; color: var(--muted); }
+@media (max-width: 560px) {
+  .strip { grid-template-columns: minmax(0, 1fr); }
+  .actions { justify-content: start; }
+  h1 { font-size: 1.7rem; }
+}
+@media (prefers-reduced-motion: no-preference) { .strip { transition: opacity 160ms ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Morning Desk</h1>
+      <div class="date" id="today"></div>
+    </div>
+    <div class="tally" id="tally" role="group" aria-label="Filter by what the item needs"></div>
+  </header>
+
+  <div class="brief" id="brief">
+    <h2>No pulse yet</h2>
+    <p>Ask Claude in Claude Code to "refresh my Morning Desk". It reads Slack, Jira and GitHub, adds what needs you, and writes a short brief here.</p>
+  </div>
+
+  <section class="du" id="du" aria-labelledby="duTitle">
+    <div class="du-head">
+      <h2 id="duTitle">Daily Update</h2>
+      <span class="meta" id="duMeta"></span>
+      <span class="spacer"></span>
+      <a id="duThread" href="#" target="_blank" rel="noopener" hidden>Open this week's thread</a>
+    </div>
+    <pre id="duText" tabindex="0" aria-label="Daily update text">No update yet. Press Refresh to write today's from the desk.</pre>
+    <div class="du-row">
+      <button type="button" class="btn primary" id="duCopy">Copy for Slack</button>
+      <button type="button" class="btn" id="duRefresh">Refresh</button>
+      <button type="button" class="btn ghost" id="duStop" hidden>Stop</button>
+      <span class="meta" id="duStatus" role="status"></span>
+    </div>
+    <p class="hint">Refresh rewrites it from the desk's latest state in your usual format. Mentions copy as plain @names; re-pick them in Slack.</p>
+  </section>
+
+  <details class="panel sess" id="sessPanel">
+    <summary><span>Claude sessions</span> <span class="meta" id="sessCount"></span></summary>
+    <div id="sessList" class="sess-list"><p class="hint">Sessions appear here after the next sync from Claude Code.</p></div>
+  </details>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Search titles, channels, notes" aria-label="Search items">
+    <label class="check">Sort
+      <select id="sortBy" class="btn" aria-label="Sort items">
+        <option value="priority">Priority, then oldest</option>
+        <option value="due">Due date</option>
+        <option value="oldest">Oldest first</option>
+        <option value="newest">Newest first</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="showSnoozed"> Show snoozed</label>
+    <label class="check"><input type="checkbox" id="showDone"> Show done and won't do</label>
+  </div>
+
+  <div class="status" id="status" role="status"></div>
+  <div id="groups"></div>
+
+  <details class="panel" id="askPanel">
+    <summary>Notes for Claude</summary>
+    <div class="asks">
+      <p style="margin:0;color:var(--muted);font-size:0.9rem">Anything you want handled at the next refresh: "draft a reply to Sam", "close PROJ-123", "watch #releases".</p>
+      <textarea id="asks" aria-label="Notes for Claude"></textarea>
+      <div class="row"><span id="asksSaved"></span><button class="btn" id="saveAsks" type="button">Save notes</button></div>
+    </div>
+  </details>
+
+  <details class="panel">
+    <summary>Add an item</summary>
+    <form class="add" id="addForm">
+      <label class="wide">What needs doing<input id="fTitle" required placeholder="Reply to Sam on the release plan"></label>
+      <label>Type
+        <select id="fKind"></select>
+      </label>
+      <label>Where<input id="fSource" placeholder="#team-channel"></label>
+      <label>Since<input id="fSince" type="date"></label>
+      <label>Due (optional)<input id="fDue" type="date"></label>
+      <label class="wide">Link<input id="fLink" type="url" placeholder="https://your-workspace.slack.com/archives/…"></label>
+      <label class="wide">Context<textarea id="fDetail" rows="2"></textarea></label>
+      <label class="check"><input type="checkbox" id="fHigh"> High priority</label>
+      <div style="display:flex;justify-content:end"><button class="btn primary" type="submit">Add to desk</button></div>
+    </form>
+  </details>
+</div>
+
+<script>
+(function () {
+  const KINDS = [
+    { id: "reply", label: "Reply owed", hint: "someone is waiting on your answer", color: "--k-reply" },
+    { id: "commit", label: "You said you'd do it", hint: "your open promises", color: "--k-commit" },
+    { id: "waiting", label: "Waiting on others", hint: "nudge if it drags", color: "--k-waiting" },
+    { id: "quiet", label: "Gone quiet", hint: "decide: resume, hand off, or drop", color: "--k-quiet" },
+    { id: "hygiene", label: "Tickets & PRs", hint: "close, revive, or park", color: "--k-hygiene" }
+  ];
+  const KIND = Object.fromEntries(KINDS.map(k => [k.id, k]));
+  const $ = id => document.getElementById(id);
+  /* pure:start */
+  /* per-user settings, written by /desk-setup into meta/config; every field optional.
+     This block has no DOM access so tests can evaluate it in node. */
+  const DEFAULT_STYLE_RULES = [
+    "SHAPE (most important): short and crisp, readable at a glance. 3 to 5 workstreams, each ONE short sentence (about 15 words), at most 2 one-line sub-points. The whole update should fit in about 12 lines.",
+    "Only outcomes, impact and asks. Order workstreams by what moved most. First person, plain and direct. Asks as direct questions with @mentions; cc whoever asked for the thing.",
+    "Add an **Impact:** sub-point only when a change has a user-visible effect.",
+    "Cut: raw telemetry, internal-process status, scheduling friction, housekeeping, anything not yet agreed or done.",
+    "Keep disputes and escalations out: at most \"I'd like to discuss the issue flagged by <name> in the standup\". Don't repeat wins already reported in the previous update."
+  ].join("\n");
+  const DEFAULT_CONFIG = {
+    ownerName: "the user",
+    channelName: "",
+    teamName: "",
+    updateHeader: "Daily Update for {date}:",
+    trackerName: "",
+    trackerLinkPattern: "",
+    githubOrgs: [],
+    styleRules: DEFAULT_STYLE_RULES
+  };
+  /* take each field from the db only when it has the right type, so a bad value can't break rendering */
+  function normalizeConfig(c) {
+    const src = c && typeof c === "object" ? c : {};
+    const out = {};
+    for (const k of Object.keys(DEFAULT_CONFIG)) {
+      const d = DEFAULT_CONFIG[k];
+      if (Array.isArray(d)) out[k] = Array.isArray(src[k]) ? src[k].filter(x => typeof x === "string") : d;
+      else out[k] = typeof src[k] === "string" ? src[k] : d;
+    }
+    return out;
+  }
+  function orgPrefix(orgs) {
+    const escaped = (orgs || []).map(o => o.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return new RegExp("^https://github\\.com/(" + (escaped.join("|") || "[^/]+") + ")/", "i");
+  }
+  function hasDeskData(items, sessions) {
+    return items.length > 0 || sessions.length > 0;
+  }
+  /* pure:end */
+  let CONFIG = { ...DEFAULT_CONFIG };
+  const state = { sessions: [], items: [], filter: null, q: "", showDone: false, showSnoozed: false, openNote: null, openSnooze: null, db: null, writable: true };
+
+  const todayISO = () => new Date().toLocaleDateString("en-CA");
+  $("today").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  $("fSince").value = todayISO();
+  $("fKind").innerHTML = KINDS.map(k => `<option value="${k.id}">${k.label}</option>`).join("");
+
+  try {
+    state.showDone = localStorage.getItem("md.showDone") === "1";
+    state.showSnoozed = localStorage.getItem("md.showSnoozed") === "1";
+  } catch (e) {}
+  $("showDone").checked = state.showDone;
+  try { state.sort = localStorage.getItem("md.sort") || "priority"; } catch (e) { state.sort = "priority"; }
+  $("sortBy").value = state.sort;
+  $("sortBy").addEventListener("change", e => { state.sort = e.target.value; try { localStorage.setItem("md.sort", state.sort); } catch (x) {} render(); });
+  $("showSnoozed").checked = state.showSnoozed;
+
+  function daysSince(iso) {
+    if (!iso) return null;
+    const d = new Date(iso + "T00:00:00");
+    if (isNaN(d)) return null;
+    return Math.max(0, Math.round((new Date(todayISO() + "T00:00:00") - d) / 86400000));
+  }
+  function daysUntil(iso) {
+    const d = new Date(iso + "T00:00:00");
+    if (isNaN(d)) return null;
+    return Math.round((d - new Date(todayISO() + "T00:00:00")) / 86400000);
+  }
+  const bySince = (a, b) => String(a.since || "").localeCompare(String(b.since || ""));
+  const byPriority = (a, b) => (a.priority === "high" ? 0 : 1) - (b.priority === "high" ? 0 : 1);
+  const SORTS = {
+    priority: (a, b) => byPriority(a, b) || bySince(a, b),
+    /* items without a due date go last, ordered by priority */
+    due: (a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || String(a.due || "").localeCompare(String(b.due || "")) || byPriority(a, b) || bySince(a, b),
+    oldest: (a, b) => bySince(a, b),
+    newest: (a, b) => bySince(b, a)
+  };
+  function effectiveStatus(it) {
+    if (it.status === "snoozed" && it.snoozeUntil && it.snoozeUntil <= todayISO()) return "open";
+    return it.status || "open";
+  }
+  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+  function safeLink(u) { return /^https:\/\//.test(u || "") ? u : null; }
+  function setStatus(msg, err) { const s = $("status"); s.textContent = msg || ""; s.classList.toggle("err", !!err); }
+
+  function visible() {
+    const q = state.q.toLowerCase();
+    return state.items.filter(it => {
+      const st = effectiveStatus(it);
+      if ((st === "done" || st === "wontdo") && !state.showDone) return false;
+      if (st === "snoozed" && !state.showSnoozed) return false;
+      if (state.filter && it.kind !== state.filter) return false;
+      if (q && !`${it.title} ${it.detail || ""} ${it.source || ""} ${it.note || ""} ${it.initiative || ""}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function renderTally() {
+    const open = state.items.filter(it => effectiveStatus(it) === "open");
+    $("tally").innerHTML = KINDS.map(k => {
+      const n = open.filter(it => it.kind === k.id).length;
+      return `<button type="button" data-kind="${k.id}" aria-pressed="${state.filter === k.id}"><i class="dot" style="background:var(${k.color})"></i><b>${n}</b><span>${k.label}</span></button>`;
+    }).join("");
+  }
+
+  function strip(it) {
+    const k = KIND[it.kind] || KIND.quiet;
+    const st = effectiveStatus(it);
+    const age = daysSince(it.since);
+    const link = safeLink(it.link);
+    const closed = st === "done" || st === "wontdo";
+    const due = it.due ? daysUntil(it.due) : null;
+    const actions = closed
+      ? `<button class="btn" data-act="reopen" data-id="${it.id}">Reopen</button>`
+      : `<button class="btn primary" data-act="done" data-id="${it.id}">Done</button>
+         <button class="btn" data-act="wontdo" data-id="${it.id}">Won't do</button>
+         ${state.openSnooze === it.id
+           ? `<span class="snooze-menu"><button class="btn" data-act="snooze" data-days="1" data-id="${it.id}">1d</button><button class="btn" data-act="snooze" data-days="3" data-id="${it.id}">3d</button><button class="btn" data-act="snooze" data-days="7" data-id="${it.id}">1w</button></span>`
+           : `<button class="btn" data-act="snoozeMenu" data-id="${it.id}">${st === "snoozed" ? "Snoozed" : "Snooze"}</button>`}
+         <button class="btn ghost" data-act="note" data-id="${it.id}">Note</button>`;
+    const noteBlock = state.openNote === it.id
+      ? `<div class="note-edit"><textarea id="note-${esc(it.id)}" aria-label="Note">${esc(it.note || "")}</textarea><div class="row"><button class="btn ghost" data-act="cancelNote" data-id="${it.id}">Cancel</button><button class="btn" data-act="saveNote" data-id="${it.id}">Save note</button></div></div>`
+      : (it.note ? `<div class="note">${esc(it.note)}</div>` : "");
+    return `<article class="strip ${closed ? "done" : ""}" style="--kc:var(${k.color})">
+      <div class="title">${it.priority === "high" ? '<span class="hi">HIGH</span>' : ""}${esc(it.title)}</div>
+      <div class="actions">${actions}</div>
+      ${it.detail ? `<div class="detail">${esc(it.detail)}</div>` : ""}
+      <div class="facts">
+        ${it.initiative ? `<span class="init">${esc(it.initiative)}</span>` : ""}
+        ${it.source ? `<span>${esc(it.source)}</span>` : ""}
+        ${age !== null ? `<span class="age ${age >= 7 ? "old" : ""}">${age === 0 ? "today" : age + "d"}</span>` : ""}
+        ${st === "snoozed" ? `<span>until ${esc(it.snoozeUntil)}</span>` : ""}
+        ${due !== null && !closed ? `<span class="due ${due < 0 ? "late" : due <= 2 ? "soon" : ""}">${due < 0 ? `overdue ${-due}d` : due === 0 ? "due today" : `due in ${due}d`}</span>` : ""}
+        ${st === "done" && it.doneAt ? `<span>done ${esc(it.doneAt.slice(0, 10))}</span>` : ""}
+        ${st === "wontdo" ? `<span>won't do${it.doneAt ? " · " + esc(it.doneAt.slice(0, 10)) : ""}</span>` : ""}
+        ${it.addedBy === "you" ? "<span>added by you</span>" : ""}
+        ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener">Open</a>` : ""}
+        ${sessionsFor(it).map(se => `<button type="button" class="sess-chip" data-resume="${esc(se.resume)}" title="Copy the command to resume this Claude Code session">▸ ${esc(se.title || "Claude session")} · copy resume</button>`).join("")}
+      </div>
+      ${noteBlock}
+    </article>`;
+  }
+
+  function sessionsFor(it) {
+    return state.sessions.filter(se => (se.itemIds || []).includes(it.id) || (it.sessions || []).includes(se.id));
+  }
+  function ago(iso) {
+    const m = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (isNaN(m)) return "";
+    return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`;
+  }
+  function renderSessions() {
+    const list = [...state.sessions].sort((a, b) => String(b.lastAt || "").localeCompare(String(a.lastAt || "")));
+    const today = list.filter(se => (se.lastAt || "").slice(0, 10) === new Date().toISOString().slice(0, 10)).length;
+    $("sessCount").textContent = list.length ? `${today} active today · ${list.length} tracked` : "";
+    if (!list.length) return;
+    $("sessList").innerHTML = list.map(se => `<div class="sess-row">
+      <div class="top"><b>${esc(se.title || "Untitled session")}</b><span class="meta">${esc(se.repo || "")}${se.branch ? " · " + esc(se.branch) : ""} · ${esc(ago(se.lastAt))}</span></div>
+      ${se.state ? `<div class="state">${esc(se.state)}</div>` : ""}
+      <div class="facts">${(se.prs || []).slice(-3).map(u => safeLink(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(orgPrefix(CONFIG.githubOrgs), ""))}</a>` : "").join("")}
+        <button type="button" class="sess-chip" data-resume="${esc(se.resume)}">copy resume command</button></div>
+    </div>`).join("");
+  }
+
+  function render() {
+    renderTally();
+    const items = visible();
+    if (!state.items.length) {
+      $("groups").innerHTML = `<div class="empty"><strong>Your desk is empty</strong><span>Items appear here after Claude's first refresh, or add one yourself below.</span></div>`;
+      return;
+    }
+    const html = KINDS.map(k => {
+      const list = items.filter(it => it.kind === k.id).sort(SORTS[state.sort] || SORTS.priority);
+      if (!list.length) return "";
+      return `<section class="group" aria-label="${k.label}">
+        <div class="group-head"><i class="dot" style="background:var(${k.color})"></i><h3>${k.label}</h3><span class="count">${list.length}</span><span class="hint">${k.hint}</span></div>
+        ${list.map(strip).join("")}
+      </section>`;
+    }).join("");
+    $("groups").innerHTML = html || `<div class="empty"><strong>Nothing matches</strong><span>Clear the search or filter to see everything.</span></div>`;
+  }
+
+  function renderBrief(p) {
+    if (!p || !p.headline) return;
+    const when = p.generatedAt ? new Date(p.generatedAt).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" }) : "";
+    const bullets = Array.isArray(p.bullets) ? p.bullets : [];
+    $("brief").innerHTML = `<div class="meta">Pulse · ${esc(when)}</div><h2>${esc(p.headline)}</h2>${bullets.length ? `<ul>${bullets.map(b => {
+      const l = safeLink(b.link);
+      return `<li>${esc(b.text)}${l ? ` <a href="${esc(l)}" target="_blank" rel="noopener">Open</a>` : ""}</li>`;
+    }).join("")}</ul>` : ""}`;
+  }
+
+  async function write(id, patch) {
+    if (!state.db) { setStatus("Changes can't be saved in this view.", true); return; }
+    const before = state.items.find(i => i.id === id);
+    if (!before) return;
+    try {
+      await state.db.collection("items").doc(id).update({ ...patch, updatedAt: new Date().toISOString() });
+      setStatus("");
+    } catch (e) {
+      setStatus(e && e.code === "invalid_argument" ? "You can view this desk but not change it." : "Couldn't save that change. Try again in a moment.", true);
+    }
+  }
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.resume) {
+      const cmd = b.dataset.resume;
+      navigator.clipboard.writeText(cmd).then(() => setStatus("Copied: " + cmd), () => setStatus("Copy this into your terminal: " + cmd));
+      return;
+    }
+    if (b.dataset.kind) { state.filter = state.filter === b.dataset.kind ? null : b.dataset.kind; render(); return; }
+    const id = b.dataset.id, act = b.dataset.act;
+    if (!act) return;
+    if (act === "done") write(id, { status: "done", doneAt: new Date().toISOString(), snoozeUntil: null });
+    if (act === "wontdo") write(id, { status: "wontdo", doneAt: new Date().toISOString(), snoozeUntil: null });
+    if (act === "reopen") write(id, { status: "open", doneAt: null });
+    if (act === "snoozeMenu") { state.openSnooze = state.openSnooze === id ? null : id; render(); }
+    if (act === "snooze") {
+      const d = new Date(); d.setDate(d.getDate() + Number(b.dataset.days));
+      state.openSnooze = null;
+      write(id, { status: "snoozed", snoozeUntil: d.toLocaleDateString("en-CA") });
+    }
+    if (act === "note") { state.openNote = id; render(); const t = document.getElementById("note-" + id); if (t) t.focus(); }
+    if (act === "cancelNote") { state.openNote = null; render(); }
+    if (act === "saveNote") {
+      const t = document.getElementById("note-" + id);
+      const val = t ? t.value.trim() : "";
+      state.openNote = null;
+      const it = state.items.find(i => i.id === id);
+      if (it && (it.note || "") !== val) write(id, { note: val }); else render();
+    }
+  });
+
+  $("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+  $("showDone").addEventListener("change", e => { state.showDone = e.target.checked; try { localStorage.setItem("md.showDone", e.target.checked ? "1" : "0"); } catch (x) {} render(); });
+  $("showSnoozed").addEventListener("change", e => { state.showSnoozed = e.target.checked; try { localStorage.setItem("md.showSnoozed", e.target.checked ? "1" : "0"); } catch (x) {} render(); });
+
+  $("addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!state.db) { setStatus("Adding items needs the saved desk, which isn't available in this view.", true); return; }
+    const title = $("fTitle").value.trim();
+    if (!title) return;
+    const body = {
+      title, kind: $("fKind").value, source: $("fSource").value.trim(), since: $("fSince").value || todayISO(), due: $("fDue").value || null,
+      link: $("fLink").value.trim(), detail: $("fDetail").value.trim(), priority: $("fHigh").checked ? "high" : "normal",
+      status: "open", addedBy: "you", note: "", updatedAt: new Date().toISOString()
+    };
+    try {
+      await state.db.collection("items").add(body);
+      $("addForm").reset(); $("fSince").value = todayISO();
+      setStatus("Added to your desk.");
+    } catch (err) {
+      setStatus(err && err.code === "quota_exceeded" ? "The desk is full. Clear out old done items first." : "Couldn't add that item. Try again in a moment.", true);
+    }
+  });
+
+  let asksLoaded = "";
+  $("saveAsks").addEventListener("click", async () => {
+    if (!state.db) return;
+    const text = $("asks").value;
+    if (text === asksLoaded) { $("asksSaved").textContent = "No changes"; return; }
+    try {
+      await state.db.doc("meta/asks").set({ text, updatedAt: new Date().toISOString() });
+      asksLoaded = text;
+      $("asksSaved").textContent = "Saved. Claude reads these at the next refresh.";
+    } catch (e) { $("asksSaved").textContent = "Couldn't save. Try again."; }
+  });
+
+  render();
+
+  /* Daily Update: updates/<YYYY-MM-DD> holds {text, generatedAt, generatedBy}. Refresh asks Claude (sample) to rewrite it from the desk. */
+  const du = { db: null, sample: null, today: todayISO(), docs: [], ctl: null, busy: false, autoTried: false };
+  const ddmmyyyy = iso => { const [y, m, d] = iso.split("-"); return `${d}-${m}-${y}`; };
+  const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+  /* older docs stored structured lines; render them the same way */
+  function docText(d) {
+    if (!d) return "";
+    if (d.postedText) return d.postedText;
+    if (d.text) return d.text;
+    const out = ["*" + CONFIG.updateHeader.replace("{date}", ddmmyyyy(d.date)) + "*"];
+    (d.lines || []).forEach((l, i) => {
+      out.push(`${i + 1}. ${l.title ? `*${l.title}:* ` : ""}${l.body || ""}`.trimEnd());
+      (l.subs || []).filter(Boolean).forEach((s, j) => out.push(`    ${LETTERS[j]}. ${s}`));
+    });
+    return out.join("\n");
+  }
+  const todayDoc = () => du.docs.find(d => d.date === du.today);
+  const lastChange = () => [...state.items.map(it => it.updatedAt), ...state.sessions.map(se => se.updatedAt)].reduce((m, t) => (t && t > m ? t : m), "");
+  function isStale() {
+    du.today = todayISO();
+    const d = todayDoc();
+    if (d && d.status === "posted") return false;
+    return !d || !d.generatedAt || lastChange() > d.generatedAt;
+  }
+  function duRender() {
+    if (du.busy) return;
+    du.today = todayISO(); /* a tab left open overnight must move to the new day */
+    const d = todayDoc();
+    $("duText").textContent = d ? docText(d) : "No update yet. Press Refresh to write today's from the desk.";
+    const when = d && d.generatedAt ? new Date(d.generatedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) : "";
+    const posted = d && d.status === "posted";
+    $("duMeta").textContent = !d ? ddmmyyyy(du.today) : posted ? `${ddmmyyyy(du.today)} · posted` : `${ddmmyyyy(du.today)} · updated ${when}${isStale() ? " · desk changed since" : ""}`;
+    $("duRefresh").hidden = !du.sample || posted;
+  }
+
+  function buildPrompt() {
+    const prev = du.docs.filter(d => d.date < du.today).slice(0, 2);
+    const since = prev[0] ? prev[0].date : du.today;
+    const rel = state.items.filter(it => {
+      const st = effectiveStatus(it);
+      return st === "open" || st === "snoozed" || (it.doneAt || "").slice(0, 10) >= since;
+    }).map(it => ({
+      title: it.title, kind: it.kind, status: effectiveStatus(it), priority: it.priority, initiative: it.initiative || undefined,
+      detail: it.detail || undefined, note: it.note || undefined, due: it.due || undefined, doneAt: it.doneAt || undefined
+    }));
+    const current = todayDoc();
+    return [
+      `You write ${CONFIG.ownerName}'s daily standup update ${CONFIG.channelName ? `for the ${CONFIG.channelName} Slack channel` : "for their team"}${CONFIG.teamName ? ` (${CONFIG.teamName})` : ""}.`,
+      "",
+      "FORMAT, exactly, as standard Markdown (they paste it into Slack and use Format as Markdown):",
+      "**" + CONFIG.updateHeader.replace("{date}", ddmmyyyy(du.today)) + "**",
+      "1. **Workstream name:** one short sentence.",
+      "    a. sub-point (PR links, asks, today's plan)",
+      "2. **Next workstream:** ...",
+      "",
+      "LINKS: every PR, ticket, doc or thread you mention must be a Markdown link, e.g. [#123](https://github.com/<org>/<repo>/pull/123). Take URLs only from the data below (session prs, item links, notes)." +
+        (CONFIG.trackerLinkPattern ? ` ${CONFIG.trackerName || "Ticket"} keys may be linked as ${CONFIG.trackerLinkPattern.replace("{key}", "<KEY>")}.` : "") +
+        " If you have no URL for something, leave it as plain text.",
+      "STYLE RULES (learned from what they post):",
+      CONFIG.styleRules,
+      "Keep their workstream names from previous updates when the work continues. Use only facts in the data below; never invent PR numbers, people or numbers. Skip items marked won't do.",
+      "The PREVIOUS UPDATES below are what they actually posted: copy their phrasing and voice, but keep today's update short (the style rules win).",
+      "Reply with ONLY the update text, no preamble.",
+      "",
+      "PREVIOUS UPDATES (for names and continuity):",
+      ...prev.map(d => docText(d)),
+      "",
+      current ? "CURRENT DRAFT FOR TODAY (written earlier from Slack; keep its facts, update with the desk data):\n" + docText(current) : "",
+      "",
+      `CLAUDE CODE SESSIONS active since the last update (what ${CONFIG.ownerName} has been working on; use for progress and today's plan):`,
+      JSON.stringify(state.sessions.filter(se => (se.lastAt || "") >= since).map(se => ({ title: se.title, repo: se.repo, state: se.state, prs: se.prs }))).slice(0, 30000),
+      "",
+      "DESK ITEMS (open, plus anything closed since the last update):",
+      JSON.stringify(rel).slice(0, 60000)
+    ].join("\n");
+  }
+
+  async function duRefresh() {
+    if (!du.sample || du.busy) return;
+    du.today = todayISO();
+    du.busy = true; du.ctl = new AbortController();
+    $("duRefresh").disabled = true; $("duStop").hidden = false;
+    $("duStatus").textContent = "Writing...";
+    const before = $("duText").textContent;
+    try {
+      const { text } = await du.sample(buildPrompt(), {
+        signal: du.ctl.signal, cache: false,
+        onText: ({ text }) => { $("duText").textContent = text; }
+      });
+      const body = { date: du.today, text: text.trim(), generatedAt: new Date().toISOString(), generatedBy: "page", status: (todayDoc() || {}).status || "draft" };
+      if (du.db) await du.db.collection("updates").doc(du.today).set({ ...(todayDoc() ? (({ id, ...r }) => r)(todayDoc()) : {}), ...body });
+      $("duStatus").textContent = "Updated";
+    } catch (e) {
+      $("duText").textContent = before;
+      const msg = { cancelled: "", not_granted: "Refresh needs permission to use Claude on this page.", sampling_disabled: "Claude isn't available on this account.", rate_limited: "Too many requests. Try again in a minute.", session_expired: "Sign in again to refresh." }[e && e.code];
+      $("duStatus").textContent = msg !== undefined ? msg : "Couldn't refresh. Try again.";
+      if (e && (e.code === "not_granted" || e.code === "sampling_disabled")) du.sample = null;
+    } finally {
+      du.busy = false; $("duRefresh").disabled = false; $("duStop").hidden = true;
+      duRender();
+    }
+  }
+  $("duRefresh").addEventListener("click", duRefresh);
+  $("duStop").addEventListener("click", () => du.ctl && du.ctl.abort());
+  $("duCopy").addEventListener("click", async () => {
+    const text = $("duText").textContent;
+    try { await navigator.clipboard.writeText(text); $("duStatus").textContent = isStale() ? "Copied. The desk changed since this was written; Refresh for the latest." : "Copied"; }
+    catch (e) {
+      const r = document.createRange(); r.selectNodeContents($("duText"));
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      $("duStatus").textContent = "Selected. Press Cmd+C to copy.";
+    }
+  });
+  duRender();
+
+  /* refresh once on open when the desk changed since today's update was written */
+  function maybeAutoRefresh() {
+    if (du.autoTried || !du.sample || !du.loaded || !state.loaded) return;
+    du.autoTried = true;
+    if (isStale() && hasDeskData(state.items, state.sessions)) duRefresh();
+  }
+
+  function initDaily(db) {
+    du.db = db;
+    db.collection("updates").orderBy("date", "desc").limit(30).onSnapshot(snap => {
+      du.docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      du.loaded = true; duRender(); maybeAutoRefresh();
+    }, () => {});
+    db.doc("meta/dailyThread").onSnapshot(s => {
+      const l = s.exists ? safeLink(s.data().link) : null;
+      $("duThread").hidden = !l;
+      if (l) $("duThread").href = l;
+    }, () => {});
+    (async () => {
+      du.sample = window.claude && window.claude.use ? await window.claude.use("sample") : null;
+      duRender(); maybeAutoRefresh();
+    })();
+  }
+
+  (async () => {
+    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) { setStatus("Open this page on claude.ai while signed in to load your desk."); return; }
+    state.db = db;
+    db.doc("meta/config").onSnapshot(s => {
+      CONFIG = normalizeConfig(s.exists ? s.data() : {});
+      renderSessions(); duRender();
+    }, () => {});
+    initDaily(db);
+    db.collection("sessions").orderBy("lastAt", "desc").limit(60).onSnapshot(snap => {
+      state.sessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderSessions(); render();
+    }, () => {});
+    db.collection("items").onSnapshot(snap => {
+      state.items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      state.loaded = true;
+      render(); duRender(); maybeAutoRefresh();
+    }, () => setStatus("Lost the connection to your desk. Reload the page.", true));
+    db.doc("meta/pulse").onSnapshot(s => { if (s.exists) renderBrief(s.data()); }, () => {});
+    try {
+      const a = await db.doc("meta/asks").get();
+      if (a.exists) { asksLoaded = a.data().text || ""; $("asks").value = asksLoaded; }
+    } catch (e) {}
+  })();
+})();
+</script>
